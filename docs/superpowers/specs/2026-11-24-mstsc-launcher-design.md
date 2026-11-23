@@ -62,8 +62,15 @@ SynRdpManager is a small Windows app that shows every RDP server the user can se
 ### Data source: 1Password via `op.exe`
 - `op.exe` uses 1Password desktop-app integration (Settings → Developer → "Integrate with
   1Password CLI"); unlock via Windows Hello/PIN, no tokens.
-- `op.exe` is looked up in: setting `OpPath` → app folder → `PATH` → winget default
-  location. The app does **not** ship `op.exe` (licence); the README tells users where to
+- `op.exe` is looked up in: setting `OpPath` → app folder →
+  `%ProgramFiles%\1Password CLI\op.exe` → `PATH`.
+- **Verified on the AVD (2026-11-24):** `op` 2.42.0 at `C:\Program Files\1Password CLI\op.exe`
+  + "Integrate with 1Password CLI" → `op vault list` works for a normal user (unlock popup,
+  then vault list). Gotchas for the README setup guide: `winget install --scope machine`
+  puts the real exe under `C:\Program Files\WinGet\Packages`, which normal users get
+  "Access is denied" on — copy `op.exe` to `C:\Program Files\1Password CLI\` instead and add
+  that folder to the system PATH; the Developer settings in 1Password are greyed out while
+  the app is locked; a PATH change needs a sign-out/sign-in. The app does **not** ship `op.exe` (licence); the README tells users where to
   get it.
 - The user may be signed in to **multiple 1Password accounts** (the screenshot shows
   "All Accounts"). Refresh iterates `op account list` and queries each account, unless
@@ -105,7 +112,7 @@ SynRdpManager is a small Windows app that shows every RDP server the user can se
 ### PuTTY (Linux servers)
 - Items tagged with `PuttyTag` (default `PuttyDealer`) are SSH servers. Same hostname rules
   as above (default port 22); username = the item's username field (optional).
-- PuTTY is installed for all users on the AVD; `PuttyPath` setting, default lookup:
+- PuTTY is installed for all users on the AVD (`C:\Program Files\PuTTY\`, on system PATH); `PuttyPath` setting, default lookup:
   `%ProgramFiles%\PuTTY\putty.exe` → `PATH`. Authentication is via **Pageant** with the key
   already loaded; the app does not handle keys. *[builder call]* If no Pageant process is
   running, show a non-blocking warning.
