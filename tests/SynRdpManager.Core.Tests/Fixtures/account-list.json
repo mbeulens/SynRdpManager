@@ -1,0 +1,4 @@
+[
+  {"url":"customer-a.1password.com","email":"admin@customer-a.example","user_uuid":"USERUUID0000000000000000A1","account_uuid":"ACCTUUID0000000000000000A1"},
+  {"url":"customer-b.1password.com","email":"admin@customer-b.example","user_uuid":"USERUUID0000000000000000B1","account_uuid":"ACCTUUID0000000000000000B1"}
+]

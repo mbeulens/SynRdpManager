@@ -1,0 +1,109 @@
+{
+  "id": "item000000000000000000001",
+  "title": "Customer A - server01",
+  "version": 2,
+  "vault": {
+    "id": "vault00000000000000000001",
+    "name": "Customer A"
+  },
+  "category": "LOGIN",
+  "fields": [
+    {
+      "id": "username",
+      "type": "STRING",
+      "purpose": "USERNAME",
+      "label": "username",
+      "value": "svc"
+    },
+    {
+      "id": "password",
+      "type": "CONCEALED",
+      "purpose": "PASSWORD",
+      "label": "password",
+      "value": "fake-pass-1"
+    },
+    {
+      "id": "h1",
+      "type": "STRING",
+      "label": "Hostname",
+      "value": "server01.customer-a.local:3390"
+    },
+    {
+      "id": "d1",
+      "type": "STRING",
+      "label": "Domain",
+      "value": "CORP"
+    }
+  ],
+  "urls": [
+    {
+      "label": "website",
+      "primary": true,
+      "href": "other.example"
+    }
+  ]
+}
+{
+  "id": "item000000000000000000002",
+  "title": "Customer A - server02",
+  "version": 2,
+  "vault": {
+    "id": "vault00000000000000000001",
+    "name": "Customer A"
+  },
+  "category": "LOGIN",
+  "fields": [
+    {
+      "id": "username",
+      "type": "STRING",
+      "purpose": "USERNAME",
+      "label": "username",
+      "value": "svc"
+    },
+    {
+      "id": "password",
+      "type": "CONCEALED",
+      "purpose": "PASSWORD",
+      "label": "password",
+      "value": "fake-pass-1"
+    }
+  ],
+  "urls": [
+    {
+      "label": "a",
+      "primary": false,
+      "href": "first.customer-a.local"
+    },
+    {
+      "label": "b",
+      "primary": true,
+      "href": "primary.customer-a.local"
+    }
+  ]
+}
+{
+  "id": "item000000000000000000003",
+  "title": "Customer A - server03",
+  "version": 2,
+  "vault": {
+    "id": "vault00000000000000000001",
+    "name": "Customer A"
+  },
+  "category": "LOGIN",
+  "fields": [
+    {
+      "id": "username",
+      "type": "STRING",
+      "purpose": "USERNAME",
+      "label": "username",
+      "value": "svc"
+    },
+    {
+      "id": "password",
+      "type": "CONCEALED",
+      "purpose": "PASSWORD",
+      "label": "password",
+      "value": "fake-pass-1"
+    }
+  ]
+}

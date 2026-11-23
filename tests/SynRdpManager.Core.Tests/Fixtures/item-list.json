@@ -1,0 +1,5 @@
+[
+  {"id":"item000000000000000000001","title":"Customer A - server01","version":2,"vault":{"id":"vault00000000000000000001","name":"Customer A"},"category":"LOGIN","urls":[{"label":"website","primary":true,"href":"server01.customer-a.local"}]},
+  {"id":"item000000000000000000002","title":"Customer A - server02","version":1,"vault":{"id":"vault00000000000000000001","name":"Customer A"},"category":"LOGIN"},
+  {"id":"item000000000000000000003","title":"Customer A - server03","version":1,"vault":{"id":"vault00000000000000000001","name":"Customer A"},"category":"LOGIN"}
+]
