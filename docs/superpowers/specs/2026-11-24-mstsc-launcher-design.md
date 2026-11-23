@@ -52,7 +52,7 @@ SynRdpManager is a small Windows app that shows every RDP server the user can se
 
 | | Approach | Trade-off | |
 |---|---|---|---|
-| A | C# .NET 8 WPF + 1Password CLI (`op.exe`) with desktop-app integration | Native, polished, single exe; needs `op.exe` + one 1Password setting | **chosen** |
+| A | C# .NET 10 WPF + 1Password CLI (`op.exe`) with desktop-app integration | Native, polished, single exe; needs `op.exe` + one 1Password setting | **chosen** |
 | B | PowerShell + WinForms script | No build step, but clunky and often blocked by execution policy on AVDs | rejected |
 | C | Electron / web app | Heavy, adds nothing | rejected |
 | — | Encrypted config file downloaded with a bearer token | Extra hosting + token management; 1Password vaults already do this | rejected in favour of tags |
@@ -174,7 +174,7 @@ SynRdpManager                [search…]   [⟳]  [⚙]
   items — tag your RDP items in 1Password").
 
 ### Delivery
-- .NET 8, `win-x64`, self-contained single-file exe.
+- .NET 10, `win-x64`, self-contained single-file exe.
 - GitHub Actions builds on push and attaches a zip to a GitHub Release on version tags.
 - Version kept in `VERSION` and the csproj (csproj reads `VERSION`, single source of truth).
   Versioning rules: all work on `dev`; every commit bumps the patch number (done by the

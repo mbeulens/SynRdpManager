@@ -1,1 +1,7 @@
 .remember/
+.superpowers/
+bin/
+obj/
+*.user
+.vs/
+out/
