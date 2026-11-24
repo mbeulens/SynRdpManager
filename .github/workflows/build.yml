@@ -27,8 +27,9 @@ jobs:
         shell: pwsh
         run: |
           $v = (Get-Content VERSION).Trim()
-          $files = @('out/SynRdpManager.exe')
-          if (Test-Path settings.sample.json) { $files += 'settings.sample.json' }
+          if (-not (Test-Path settings.sample.json)) { throw 'settings.sample.json is missing' }
+          if (-not (Test-Path out/SynRdpManager.exe)) { throw 'out/SynRdpManager.exe is missing' }
+          $files = @('out/SynRdpManager.exe', 'settings.sample.json')
           Compress-Archive -Path $files -DestinationPath "SynRdpManager-$v.zip"
           "ZIP=SynRdpManager-$v.zip" | Out-File -FilePath $env:GITHUB_ENV -Append
 

@@ -1,0 +1,10 @@
+{
+  "Tag": "MstscDealer",
+  "PuttyTag": "PuttyDealer",
+  "OpPath": null,
+  "PuttyPath": null,
+  "PuttyTemplateSession": "SynRdpManager-Template",
+  "Accounts": [],
+  "LaunchMode": "Auto",
+  "CredentialCleanupSeconds": 15
+}
