@@ -9,7 +9,8 @@ public sealed class RdpLauncher(
     IProcessLauncher launcher,
     IClipboardService clipboard,
     TimeProvider time,
-    string mstscExe = "mstsc.exe")
+    string mstscExe = "mstsc.exe",
+    Action<string>? onError = null)
 {
     public const string Comment = "SynRdpManager";
     private static readonly TimeSpan ClipboardClearDelay = TimeSpan.FromSeconds(30);
@@ -24,6 +25,8 @@ public sealed class RdpLauncher(
 
     private readonly object _lock = new();
     private readonly Dictionary<string, Pending> _pending = new();
+    // Failed restores of foreign credentials; retried once by CleanupPendingNow.
+    private readonly List<Pending> _retry = new();
 
     public Task ConnectAsync(ServerEntry e, RdpCredentials? c, LaunchMode mode, TimeSpan cleanupDelay, CancellationToken ct)
     {
@@ -50,12 +53,11 @@ public sealed class RdpLauncher(
         }
         else if (mode == LaunchMode.Clipboard)
         {
+            // The clipboard adapter may need the UI thread: never call it under _lock.
+            clipboard.SetSecret(c.Password);
+            var password = c.Password;
             lock (_lock)
-            {
-                clipboard.SetSecret(c.Password);
-                var password = c.Password;
                 Schedule(ClipboardKey, new Pending(() => clipboard.ClearIfEquals(password), null), ClipboardClearDelay);
-            }
             launcher.Start(mstscExe, args);
         }
         else
@@ -105,14 +107,33 @@ public sealed class RdpLauncher(
 
     private void RunPending(string key, Pending? expected = null)
     {
+        Pending p;
         lock (_lock)
         {
-            if (!_pending.TryGetValue(key, out var p) || (expected is not null && !ReferenceEquals(p, expected)))
+            if (!_pending.TryGetValue(key, out var found) || (expected is not null && !ReferenceEquals(found, expected)))
                 return;
+            p = found;
             _pending.Remove(key);
             p.Timer?.Dispose();
+        }
+
+        // Run outside the lock and never let an exception escape (timer threads would crash the process).
+        try
+        {
             p.Cleanup();
         }
+        catch (Exception ex)
+        {
+            Report($"Cleanup for '{key}' failed: {ex.GetType().Name}");
+            if (p.Backup is not null)
+                lock (_lock) _retry.Add(p);
+        }
+    }
+
+    private void Report(string message)
+    {
+        try { onError?.Invoke(message); }
+        catch { /* the error hook must not break cleanup */ }
     }
 
     public void CleanupLeftovers()
@@ -123,8 +144,21 @@ public sealed class RdpLauncher(
 
     public void CleanupPendingNow()
     {
+        Pending[] retries;
         string[] keys;
-        lock (_lock) keys = _pending.Keys.ToArray();
+        lock (_lock)
+        {
+            retries = _retry.ToArray();
+            _retry.Clear();
+            keys = _pending.Keys.ToArray();
+        }
+
+        foreach (var p in retries)
+        {
+            try { p.Cleanup(); }
+            catch (Exception ex) { Report($"Retried restore failed: {ex.GetType().Name}"); }
+        }
+
         foreach (var key in keys) RunPending(key);
     }
 }

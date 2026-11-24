@@ -14,9 +14,10 @@ public class RdpLauncherTests
     {
         public Dictionary<string, StoredCredential> Items = new();
         public List<string> Log = new();
+        public Func<string, bool> FailOn = _ => false;
         public StoredCredential? Read(string target) => Items.GetValueOrDefault(target);
-        public void Write(StoredCredential c) { Items[c.Target] = c; Log.Add("write " + c.Target); }
-        public void Delete(string target) { Items.Remove(target); Log.Add("delete " + target); }
+        public void Write(StoredCredential c) { if (FailOn(c.Target)) throw new IOException("boom"); Items[c.Target] = c; Log.Add("write " + c.Target); }
+        public void Delete(string target) { if (FailOn(target)) throw new IOException("boom"); Items.Remove(target); Log.Add("delete " + target); }
         public IReadOnlyList<string> TargetsWithComment(string comment) =>
             Items.Values.Where(v => v.Comment == comment).Select(v => v.Target).ToList();
     }
@@ -44,11 +45,12 @@ public class RdpLauncherTests
     private readonly FakeTimeProvider _time = new();
     private readonly FakeLauncher _launcher;
     private readonly RdpLauncher _sut;
+    private readonly List<string> _errors = new();
 
     public RdpLauncherTests()
     {
         _launcher = new FakeLauncher(_creds);
-        _sut = new RdpLauncher(_creds, _launcher, _clip, _time);
+        _sut = new RdpLauncher(_creds, _launcher, _clip, _time, onError: _errors.Add);
     }
 
     private static ServerEntry Entry(HostAddress? a = null, string host = "server01", int? port = 3390) =>
@@ -211,5 +213,49 @@ public class RdpLauncherTests
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
             _sut.ConnectAsync(e, Creds, LaunchMode.Auto, Delay, CancellationToken.None));
         Assert.Empty(_launcher.Started);
+    }
+
+    [Fact]
+    public async Task Restore_failure_reports_error_and_is_retried_by_CleanupPendingNow()
+    {
+        var foreign = new StoredCredential("TERMSRV/server01", "other", "foreignpw", null);
+        _creds.Items[foreign.Target] = foreign;
+        await _sut.ConnectAsync(Entry(), Creds, LaunchMode.Auto, Delay, CancellationToken.None);
+
+        _creds.FailOn = _ => true;
+        _time.Advance(Delay);
+        Assert.Single(_errors);
+        Assert.DoesNotContain(Pw, _errors[0]);
+        Assert.Equal("SynRdpManager", _creds.Items[foreign.Target].Comment);
+
+        _creds.FailOn = _ => false;
+        _sut.CleanupPendingNow();
+        Assert.Equal(foreign, _creds.Items[foreign.Target]);
+    }
+
+    [Fact]
+    public async Task Cleanup_exception_in_timer_does_not_throw()
+    {
+        await _sut.ConnectAsync(Entry(), Creds, LaunchMode.Auto, Delay, CancellationToken.None);
+        _creds.FailOn = _ => true;
+
+        var ex = Record.Exception(() => _time.Advance(Delay));
+
+        Assert.Null(ex);
+        Assert.Single(_errors);
+    }
+
+    [Fact]
+    public async Task CleanupPendingNow_continues_after_one_target_fails()
+    {
+        await _sut.ConnectAsync(Entry(), Creds, LaunchMode.Auto, Delay, CancellationToken.None);
+        await _sut.ConnectAsync(Entry(host: "server02", port: null), Creds, LaunchMode.Auto, Delay, CancellationToken.None);
+        _creds.FailOn = t => t == "TERMSRV/server01";
+
+        var ex = Record.Exception(() => _sut.CleanupPendingNow());
+
+        Assert.Null(ex);
+        Assert.False(_creds.Items.ContainsKey("TERMSRV/server02"));
+        Assert.Single(_errors);
     }
 }
