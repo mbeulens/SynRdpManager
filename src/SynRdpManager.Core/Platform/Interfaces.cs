@@ -41,6 +41,9 @@ public sealed record StoredCredential(string Target, string UserName, string Sec
     }
 }
 
+/// <remarks>
+/// Implementations must not block on the UI thread: RdpLauncher calls them while holding an internal lock.
+/// </remarks>
 public interface ICredentialStore
 {
     StoredCredential? Read(string target);

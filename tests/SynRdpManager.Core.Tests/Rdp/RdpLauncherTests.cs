@@ -15,9 +15,10 @@ public class RdpLauncherTests
         public Dictionary<string, StoredCredential> Items = new();
         public List<string> Log = new();
         public Func<string, bool> FailOn = _ => false;
+        public Action? OnDelete;
         public StoredCredential? Read(string target) => Items.GetValueOrDefault(target);
         public void Write(StoredCredential c) { if (FailOn(c.Target)) throw new IOException("boom"); Items[c.Target] = c; Log.Add("write " + c.Target); }
-        public void Delete(string target) { if (FailOn(target)) throw new IOException("boom"); Items.Remove(target); Log.Add("delete " + target); }
+        public void Delete(string target) { if (FailOn(target)) throw new IOException("boom"); OnDelete?.Invoke(); Items.Remove(target); Log.Add("delete " + target); }
         public IReadOnlyList<string> TargetsWithComment(string comment) =>
             Items.Values.Where(v => v.Comment == comment).Select(v => v.Target).ToList();
     }
@@ -257,5 +258,48 @@ public class RdpLauncherTests
         Assert.Null(ex);
         Assert.False(_creds.Items.ContainsKey("TERMSRV/server02"));
         Assert.Single(_errors);
+    }
+
+    [Fact]
+    public async Task Reconnect_after_failed_restore_keeps_foreign_backup()
+    {
+        var foreign = new StoredCredential("TERMSRV/server01", "other", "foreignpw", null);
+        _creds.Items[foreign.Target] = foreign;
+        await _sut.ConnectAsync(Entry(), Creds, LaunchMode.Auto, Delay, CancellationToken.None);
+        _creds.FailOn = _ => true;
+        _time.Advance(Delay);
+        _creds.FailOn = _ => false;
+
+        await _sut.ConnectAsync(Entry(), new RdpCredentials("u2", "pw2"), LaunchMode.Auto, Delay, CancellationToken.None);
+        _sut.CleanupPendingNow();
+
+        Assert.Equal(foreign, _creds.Items[foreign.Target]);
+    }
+
+    [Fact]
+    public async Task Cleanup_holds_lock_against_concurrent_connect()
+    {
+        // While cleanup of T is mid-flight (inside the store's Delete), a connect to T on another
+        // thread must block until cleanup finishes; otherwise it would read our own stale credential.
+        await _sut.ConnectAsync(Entry(), Creds, LaunchMode.Auto, Delay, CancellationToken.None);
+        var inDelete = new ManualResetEventSlim();
+        var release = new ManualResetEventSlim();
+        _creds.OnDelete = () => { inDelete.Set(); Assert.True(release.Wait(TimeSpan.FromSeconds(10))); };
+
+        var cleanup = Task.Run(() => _sut.CleanupPendingNow());
+        Assert.True(inDelete.Wait(TimeSpan.FromSeconds(10)));
+        var connect = Task.Run(() => _sut.ConnectAsync(Entry(), Creds, LaunchMode.Auto, Delay, CancellationToken.None));
+
+        await Task.Delay(300);
+        Assert.False(connect.IsCompleted);
+        release.Set();
+        await cleanup;
+        await connect;
+
+        // The connect ran strictly after the cleanup, so its credential is intact and still pending.
+        Assert.Equal("SynRdpManager", _creds.Items["TERMSRV/server01"].Comment);
+        _creds.OnDelete = null;
+        _time.Advance(Delay);
+        Assert.False(_creds.Items.ContainsKey("TERMSRV/server01"));
     }
 }
