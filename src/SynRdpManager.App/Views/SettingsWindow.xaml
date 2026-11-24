@@ -32,24 +32,24 @@
         </Grid.Resources>
 
         <Label Grid.Row="0" Content="Tag (RDP servers)" Target="{Binding ElementName=TagBox}" />
-        <TextBox Grid.Row="0" Grid.Column="1" x:Name="TagBox" Text="{Binding Tag}" />
+        <TextBox Grid.Row="0" Grid.Column="1" x:Name="TagBox" Text="{Binding Tag, UpdateSourceTrigger=PropertyChanged}" />
 
         <Label Grid.Row="1" Content="Tag (SSH servers)" />
-        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding PuttyTag}" />
+        <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding PuttyTag, UpdateSourceTrigger=PropertyChanged}" />
 
         <Label Grid.Row="2" Content="PuTTY template session" />
-        <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding PuttyTemplateSession}" />
+        <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding PuttyTemplateSession, UpdateSourceTrigger=PropertyChanged}" />
 
         <Label Grid.Row="3" Content="Path to op.exe" />
-        <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding OpPath}"
+        <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding OpPath, UpdateSourceTrigger=PropertyChanged}"
                  ToolTip="Empty = look in the app folder, %ProgramFiles%\1Password CLI and PATH" />
 
         <Label Grid.Row="4" Content="Path to putty.exe" />
-        <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding PuttyPath}"
+        <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding PuttyPath, UpdateSourceTrigger=PropertyChanged}"
                  ToolTip="Empty = look in %ProgramFiles%\PuTTY and PATH" />
 
         <Label Grid.Row="5" Content="1Password accounts" />
-        <TextBox Grid.Row="5" Grid.Column="1" Text="{Binding AccountsText}"
+        <TextBox Grid.Row="5" Grid.Column="1" Text="{Binding AccountsText, UpdateSourceTrigger=PropertyChanged}"
                  ToolTip="Comma-separated account emails or IDs. Empty = all accounts" />
 
         <Label Grid.Row="6" Content="Launch mode" />
@@ -58,7 +58,7 @@
                   ToolTip="Auto = log in automatically; Clipboard = put the password on the clipboard for 30 seconds" />
 
         <Label Grid.Row="7" Content="Credential cleanup (seconds)" />
-        <TextBox Grid.Row="7" Grid.Column="1" Width="80" HorizontalAlignment="Left" Text="{Binding CleanupSecondsText}"
+        <TextBox Grid.Row="7" Grid.Column="1" Width="80" HorizontalAlignment="Left" Text="{Binding CleanupSecondsText, UpdateSourceTrigger=PropertyChanged}"
                  ToolTip="How long the temporary Windows credential for mstsc is kept (5–120)" />
 
         <TextBlock Grid.Row="8" Grid.ColumnSpan="2" Margin="0,8,0,0" Foreground="Gray" TextWrapping="Wrap"

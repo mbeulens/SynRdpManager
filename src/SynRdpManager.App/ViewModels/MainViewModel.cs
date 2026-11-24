@@ -197,14 +197,19 @@ public sealed partial class MainViewModel : ObservableObject
             return;
         }
 
-        // Settings changed while op was running: the queued refresh uses the new ones.
-        if (!ReferenceEquals(settings, _services.Settings)) return;
+        // Settings changed while op was running: discard the stale result and refresh again with the new ones.
+        if (!ReferenceEquals(settings, _services.Settings))
+        {
+            _refreshAgain = true;
+            return;
+        }
 
         _entries = result.Entries;
         _refreshedAt = DateTimeOffset.Now;
         _cachedAt = null;
         RebuildGroups();
-        SaveCache(settings);
+        // A partial result (some account failed) must not replace a complete offline cache.
+        if (result.Warnings.Count == 0) SaveCache(settings);
 
         var messages = new List<string>(result.Warnings);
         if (result.Entries.Count == 0)
