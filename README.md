@@ -1,6 +1,6 @@
 # SynRdpManager
 
-Version: 0.1.21
+Version: 0.1.22
 
 ## What it does
 
@@ -20,8 +20,8 @@ The app never edits 1Password items, never deletes PuTTY sessions and never writ
 
 GitHub Releases: https://github.com/mbeulens/SynRdpManager/releases
 
-Until the first release exists, builds are available as the `SynRdpManager-<version>` artifact of the latest
-workflow run on the Actions tab of the repository (GitHub sign-in required).
+Until the first release exists, builds are available as the `SynRdpManager` artifact of the latest
+workflow run on the Actions tab of the repository (GitHub sign-in required); it contains `SynRdpManager-<version>.zip`.
 
 The zip contains `SynRdpManager.exe` (self-contained, no .NET install needed) and `settings.sample.json`.
 
