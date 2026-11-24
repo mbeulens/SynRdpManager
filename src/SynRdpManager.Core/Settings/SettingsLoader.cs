@@ -32,6 +32,21 @@ public static class SettingsLoader
         return new SettingsLoadResult(effective, teamDefaults, warnings);
     }
 
+    /// <summary>
+    /// Team settings files to try, in order (first existing wins): next to the exe, then — when the exe dir is
+    /// Velopack's <c>current</c> folder, which every update replaces — the install root above it.
+    /// </summary>
+    public static IReadOnlyList<string> TeamSettingsCandidates(string exeDir)
+    {
+        const string FileName = "settings.json";
+        var candidates = new List<string> { Path.Combine(exeDir, FileName) };
+        var trimmed = exeDir.TrimEnd('\\', '/');
+        if (string.Equals(Path.GetFileName(trimmed), "current", StringComparison.OrdinalIgnoreCase)
+            && Path.GetDirectoryName(trimmed) is { Length: > 0 } root)
+            candidates.Add(Path.Combine(root, FileName));
+        return candidates;
+    }
+
     public static string SerializeUserOverrides(AppSettings edited, AppSettings teamDefaults)
     {
         var o = new JsonObject();

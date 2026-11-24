@@ -31,6 +31,7 @@ public sealed partial class MainViewModel : ObservableObject
 
     private readonly AppServices _services;
     private readonly IDialogService _dialogs;
+    private readonly UpdateService _updates;
     private readonly HashSet<(string AccountId, string VaultId)> _collapsed = [];
 
     private IReadOnlyList<ServerEntry> _entries = [];
@@ -44,17 +45,22 @@ public sealed partial class MainViewModel : ObservableObject
     private string _searchText = "";
     private string? _bannerText;
     private bool _bannerIsWarning;
+    private string? _bannerActionText;
+    private IRelayCommand? _bannerActionCommand;
 
-    public MainViewModel(AppServices services, IDialogService dialogs)
+    public MainViewModel(AppServices services, IDialogService dialogs, UpdateService updates)
     {
         _services = services;
         _dialogs = dialogs;
+        _updates = updates;
         VersionText = "v" + (typeof(MainViewModel).Assembly.GetName().Version?.ToString(3) ?? "?");
 
         RefreshCommand = new AsyncRelayCommand(RefreshAsync, () => !_refreshRunning);
         SettingsCommand = new RelayCommand(OpenSettings);
         EditTemplateCommand = new RelayCommand(EditTemplate);
-        DismissBannerCommand = new RelayCommand(() => BannerText = null);
+        DismissBannerCommand = new RelayCommand(() => ShowBanner(null, warning: false));
+        CheckForUpdatesCommand = new AsyncRelayCommand(_updates.CheckNowAsync);
+        RestartToUpdateCommand = new RelayCommand(RestartToUpdate);
 
         var concurrent = AsyncRelayCommandOptions.AllowConcurrentExecutions;
         ConnectCommand = new AsyncRelayCommand<EntryViewModel>(ConnectAsync, concurrent);
@@ -71,6 +77,8 @@ public sealed partial class MainViewModel : ObservableObject
     public IRelayCommand SettingsCommand { get; }
     public IRelayCommand EditTemplateCommand { get; }
     public IRelayCommand DismissBannerCommand { get; }
+    public IAsyncRelayCommand CheckForUpdatesCommand { get; }
+    public IRelayCommand RestartToUpdateCommand { get; }
     public IAsyncRelayCommand<EntryViewModel> ConnectCommand { get; }
     public IRelayCommand<EntryViewModel> CopyHostnameCommand { get; }
     public IAsyncRelayCommand<EntryViewModel> CopyUsernameCommand { get; }
@@ -106,6 +114,24 @@ public sealed partial class MainViewModel : ObservableObject
 
     public bool HasBanner => !string.IsNullOrEmpty(BannerText);
 
+    /// <summary>Label of the banner's optional action button; null = no button.</summary>
+    public string? BannerActionText
+    {
+        get => _bannerActionText;
+        private set
+        {
+            if (SetProperty(ref _bannerActionText, value)) OnPropertyChanged(nameof(HasBannerAction));
+        }
+    }
+
+    public IRelayCommand? BannerActionCommand
+    {
+        get => _bannerActionCommand;
+        private set => SetProperty(ref _bannerActionCommand, value);
+    }
+
+    public bool HasBannerAction => BannerActionText is not null;
+
     public bool IsOnline => _refreshedAt is not null;
 
     public string StatusText
@@ -132,10 +158,32 @@ public sealed partial class MainViewModel : ObservableObject
         _ = RefreshAsync();
     }
 
-    public void ShowBanner(string message, bool warning)
+    /// <summary>Replaces the banner (null hides it); the action button is shown only when both action arguments are given.</summary>
+    public void ShowBanner(string? message, bool warning, string? actionText = null, IRelayCommand? actionCommand = null)
     {
         BannerIsWarning = warning;
+        BannerActionCommand = actionCommand;
+        BannerActionText = actionCommand is null ? null : actionText;
         BannerText = message;
+    }
+
+    /// <summary>Update banners from <see cref="UpdateService"/>: offers "Restart now" once an update is downloaded.</summary>
+    public void ShowUpdateBanner(string message)
+    {
+        if (_updates.IsUpdateReady) ShowBanner(message, warning: false, "Restart now", RestartToUpdateCommand);
+        else ShowBanner(message, warning: false);
+    }
+
+    private void RestartToUpdate()
+    {
+        try
+        {
+            _updates.RestartToUpdate();
+        }
+        catch (Exception ex)
+        {
+            ShowBanner("Could not restart to update: " + ex.Message, warning: true);
+        }
     }
 
     // ---------- Refresh ----------

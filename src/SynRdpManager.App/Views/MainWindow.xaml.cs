@@ -17,6 +17,16 @@ public partial class MainWindow : Window
         DataContext = vm;
     }
 
+    // The ⚙ button opens its menu on a normal (left) click, below the button.
+    private void MenuButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { ContextMenu: { } menu } button) return;
+        menu.PlacementTarget = button;
+        menu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
+        menu.DataContext = DataContext;
+        menu.IsOpen = true;
+    }
+
     private void ServerTree_MouseDoubleClick(object sender, MouseButtonEventArgs e)
     {
         if (e.ChangedButton != MouseButton.Left) return;

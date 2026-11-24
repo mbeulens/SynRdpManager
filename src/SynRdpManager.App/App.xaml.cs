@@ -16,6 +16,8 @@ public partial class App : Application
     private RdpLauncher? _rdp;
     private MainViewModel? _vm;
 
+    private const string UpdateRepoUrl = "https://github.com/mbeulens/SynRdpManager";
+
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
@@ -47,13 +49,19 @@ public partial class App : Application
             startupWarnings.Add("Could not check for leftover Remote Desktop credentials: " + ex.Message);
         }
 
+        var rdp = _rdp;
+        var updates = new UpdateService(UpdateRepoUrl,
+            showBanner: message => Dispatcher.InvokeAsync(() => _vm?.ShowUpdateBanner(message)),
+            beforeRestart: rdp.CleanupPendingNow);
+
         var services = new AppServices(load, _rdp, launcher, new DpapiProtector(), new RegistryPuttySessionStore());
-        _vm = new MainViewModel(services, new WpfDialogService());
+        _vm = new MainViewModel(services, new WpfDialogService(), updates);
         var window = new MainWindow(_vm);
         MainWindow = window;
         window.Show();
 
         _vm.Start(startupWarnings);
+        _ = updates.CheckInBackgroundAsync(); // never throws; silent on failure
     }
 
     protected override void OnExit(ExitEventArgs e)

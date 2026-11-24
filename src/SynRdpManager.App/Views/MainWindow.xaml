@@ -13,8 +13,15 @@
     <DockPanel>
         <!-- Toolbar -->
         <DockPanel DockPanel.Dock="Top" Margin="8,8,8,4">
-            <Button DockPanel.Dock="Right" Content="⚙" ToolTip="Settings" MinWidth="32" Margin="4,0,0,0"
-                    Command="{Binding SettingsCommand}" />
+            <Button DockPanel.Dock="Right" Content="⚙ ▾" ToolTip="Settings and updates" MinWidth="32"
+                    Padding="6,2" Margin="4,0,0,0" Click="MenuButton_Click">
+                <Button.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="Settings…" Command="{Binding SettingsCommand}" />
+                        <MenuItem Header="Check for updates" Command="{Binding CheckForUpdatesCommand}" />
+                    </ContextMenu>
+                </Button.ContextMenu>
+            </Button>
             <Button DockPanel.Dock="Right" Content="Edit PuTTY template" Padding="8,2" Margin="4,0,0,0"
                     ToolTip="Open the PuTTY template session that new SSH sessions are copied from"
                     Command="{Binding EditTemplateCommand}" />
@@ -59,6 +66,9 @@
                 <Button DockPanel.Dock="Right" Content="✕" ToolTip="Dismiss" VerticalAlignment="Top"
                         Background="Transparent" BorderThickness="0" Padding="6,0" Margin="8,0,0,0"
                         Command="{Binding DismissBannerCommand}" />
+                <Button DockPanel.Dock="Right" Content="{Binding BannerActionText}" VerticalAlignment="Center"
+                        Padding="8,1" Margin="8,0,0,0" Command="{Binding BannerActionCommand}"
+                        Visibility="{Binding HasBannerAction, Converter={StaticResource BoolToVis}}" />
                 <TextBlock Text="{Binding BannerText}" TextWrapping="Wrap" VerticalAlignment="Center" />
             </DockPanel>
         </Border>

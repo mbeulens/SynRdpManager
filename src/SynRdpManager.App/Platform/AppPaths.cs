@@ -1,4 +1,6 @@
 using System.IO;
+using SynRdpManager.Core.Settings;
+
 namespace SynRdpManager.App.Platform;
 
 public static class AppPaths
@@ -15,7 +17,18 @@ public static class AppPaths
 
     public static string UserSettingsFile => Path.Combine(RoamingDir, "settings.json");
 
-    public static string TeamSettingsFile => Path.Combine(AppContext.BaseDirectory, "settings.json");
+    /// <summary>
+    /// First existing team settings file: next to the exe, then the Velopack install root (survives updates).
+    /// When none exists, the file next to the exe (reading it then yields nothing).
+    /// </summary>
+    public static string TeamSettingsFile
+    {
+        get
+        {
+            var candidates = SettingsLoader.TeamSettingsCandidates(AppContext.BaseDirectory);
+            return candidates.FirstOrDefault(File.Exists) ?? candidates[0];
+        }
+    }
 
     public static void EnsureDirectories()
     {
