@@ -30,3 +30,32 @@ public interface IPuttySessionStore
     // Upserts the given values only; never deletes other values. Names are unescaped (the store escapes).
     void Write(string name, IReadOnlyDictionary<string, object> values);
 }
+
+public sealed record StoredCredential(string Target, string UserName, string Secret, string? Comment)
+{
+    // Never print Secret.
+    bool PrintMembers(StringBuilder sb)
+    {
+        sb.Append($"Target = {Target}, UserName = {UserName}, Comment = {Comment}");
+        return true;
+    }
+}
+
+public interface ICredentialStore
+{
+    StoredCredential? Read(string target);
+    void Write(StoredCredential c);
+    void Delete(string target);
+    IReadOnlyList<string> TargetsWithComment(string comment);
+}
+
+public interface IProcessLauncher
+{
+    void Start(string exe, IReadOnlyList<string> args);
+}
+
+public interface IClipboardService
+{
+    void SetSecret(string text);
+    void ClearIfEquals(string text);
+}
