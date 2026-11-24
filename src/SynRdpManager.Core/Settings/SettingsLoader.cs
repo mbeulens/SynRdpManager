@@ -77,28 +77,33 @@ public static class SettingsLoader
         var layer = new Layer();
         if (string.IsNullOrWhiteSpace(json)) return layer;
 
-        JsonNode? root;
+        List<KeyValuePair<string, JsonNode?>> props;
         try
         {
-            root = JsonNode.Parse(json, null, new JsonDocumentOptions
+            var root = JsonNode.Parse(json, null, new JsonDocumentOptions
             {
                 CommentHandling = JsonCommentHandling.Skip,
                 AllowTrailingCommas = true,
             });
+            if (root is not JsonObject o)
+            {
+                warnings.Add($"Ignored {layerName}: the file does not contain a JSON object.");
+                return layer;
+            }
+            props = o.ToList(); // materializes the object: duplicate keys throw ArgumentException here
         }
         catch (JsonException)
         {
             warnings.Add($"Ignored {layerName}: the file is not valid JSON.");
             return layer;
         }
-
-        if (root is not JsonObject obj)
+        catch (ArgumentException)
         {
-            warnings.Add($"Ignored {layerName}: the file does not contain a JSON object.");
+            warnings.Add($"Ignored {layerName}: the file contains a duplicate key.");
             return layer;
         }
 
-        foreach (var (key, node) in obj)
+        foreach (var (key, node) in props)
         {
             switch (key.ToLowerInvariant())
             {

@@ -12,7 +12,8 @@ Mark each box; on failure note the step number.
 - [ ] 2. Status bar shows the version.
   Expected: right side shows `v0.1.x` matching the zip name.
 - [ ] 3. 1Password unlock/approval prompt on first refresh.
-  Expected: popup appears once (status "Waiting for 1Password approval..."), then `Online - refreshed HH:mm`.
+  Expected: popup appears (status "Waiting for 1Password approval…"), then `Online · refreshed HH:mm`.
+  Note how many approval popups appeared (ideally one) and report the number.
 - [ ] 4. List matches the tagged items.
   Expected: groups = vault names, items = titles, hostnames correct; RDP and SSH icons right; untagged items absent; item without hostname greyed "no hostname".
 
@@ -20,9 +21,11 @@ Mark each box; on failure note the step number.
 
 - [ ] 5. Double-click an RDP server.
   Expected: mstsc opens and logs in with no password prompt (credential persisted as `CRED_PERSIST_SESSION`).
-  If it prompts for a password: change `Persist` to `CRED_PERSIST_LOCAL_MACHINE (2)`, note it in the spec, re-test.
+  If it prompts for a password: report it; a new build is needed (credential persistence switch).
 - [ ] 6. Credential is removed after about 15 s: in a terminal run `cmdkey /list | findstr TERMSRV`.
   Expected: no `TERMSRV/<host>` entry with comment `SynRdpManager` after 15-20 s (a pre-existing credential of your own is back).
+  If you had a pre-existing credential for that host: it keeps its original persistence — `cmdkey /list` must NOT say
+  "Saved for this logon only" for it if it did not say so before the connect.
 - [ ] 7. Domain item (`domain` field) logs in as `DOMAIN\user`.
   Expected: logged in; username shown correctly in the session.
 - [ ] 8. Settings -> `LaunchMode` = Clipboard, double-click an RDP server.
@@ -55,7 +58,8 @@ Mark each box; on failure note the step number.
 ## Offline
 
 - [ ] 18. Quit 1Password, press Refresh (or restart the app).
-  Expected: list still shown from cache, status `Offline - cached list from d MMM HH:mm`, a banner explains the 1Password problem. Double-click an RDP server: mstsc opens without credentials and a notice says so.
+  Expected: list still shown, status `Offline · cached list from d MMM HH:mm` (the time of the last successful refresh;
+  never `Online` after a failed refresh), a banner explains the 1Password problem. Double-click an RDP server: mstsc opens without credentials and a notice says so.
 - [ ] 19. Start 1Password again, unlock, press Refresh.
   Expected: back to Online.
 

@@ -94,6 +94,20 @@ public class RdpLauncherTests
     }
 
     [Fact]
+    public async Task Restore_keeps_foreign_credential_persistence_and_own_write_stays_session()
+    {
+        var foreign = new StoredCredential("TERMSRV/server01", "other", "foreignpw", "mine", Persist: 2);
+        _creds.Items[foreign.Target] = foreign;
+
+        await _sut.ConnectAsync(Entry(), Creds, LaunchMode.Auto, Delay, CancellationToken.None);
+        Assert.Null(_creds.Items[foreign.Target].Persist); // our own write: store default (session)
+
+        _time.Advance(Delay);
+        Assert.Equal(2u, _creds.Items[foreign.Target].Persist);
+        Assert.Equal(foreign, _creds.Items[foreign.Target]);
+    }
+
+    [Fact]
     public async Task Existing_credential_with_our_comment_is_not_backed_up()
     {
         _creds.Items["TERMSRV/server01"] = new("TERMSRV/server01", "old", "oldpw", RdpLauncher.Comment);

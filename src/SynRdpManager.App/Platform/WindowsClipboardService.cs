@@ -14,7 +14,7 @@ public sealed class WindowsClipboardService : IClipboardService
     {
         var data = new DataObject();
         data.SetData(DataFormats.UnicodeText, text);
-        data.SetData("ExcludeClipboardContentFromMonitorProcessing", new MemoryStream(Array.Empty<byte>()));
+        data.SetData("ExcludeClipboardContentFromMonitorProcessing", new MemoryStream(new byte[4]));
         data.SetData("CanIncludeInClipboardHistory", new MemoryStream(new byte[4])); // DWORD 0 (little-endian)
         data.SetData("CanUploadToCloudClipboard", new MemoryStream(new byte[4]));
         Clipboard.SetDataObject(data, copy: true);

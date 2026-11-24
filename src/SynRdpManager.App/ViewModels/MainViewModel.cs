@@ -169,10 +169,12 @@ public sealed partial class MainViewModel : ObservableObject
     private async Task RefreshOnceAsync()
     {
         var settings = _services.Settings;
+        // op.exe may have been installed while the app was open: look it up again before giving up.
+        if (_services.Catalog is null) _services.Apply(_services.Load);
         var catalog = _services.Catalog;
         if (catalog is null)
         {
-            ShowBanner(OpNotFoundMessage, warning: true);
+            RefreshFailed(OpNotFoundMessage);
             return;
         }
 
@@ -183,17 +185,17 @@ public sealed partial class MainViewModel : ObservableObject
         }
         catch (OpException ex)
         {
-            ShowBanner(ex.UserMessage, warning: true);
+            RefreshFailed(ex.UserMessage);
             return;
         }
         catch (JsonException)
         {
-            ShowBanner(OpUnreadableMessage, warning: true);
+            RefreshFailed(OpUnreadableMessage);
             return;
         }
         catch (Exception ex)
         {
-            ShowBanner("Refresh failed: " + ex.Message, warning: true);
+            RefreshFailed("Refresh failed: " + ex.Message);
             return;
         }
 
@@ -217,6 +219,20 @@ public sealed partial class MainViewModel : ObservableObject
         if (messages.Count > 0) ShowBanner(string.Join(Environment.NewLine, messages), warning: true);
 
         SyncPutty(result);
+    }
+
+    private void RefreshFailed(string message)
+    {
+        GoOffline();
+        ShowBanner(message, warning: true);
+    }
+
+    // The list shown is no longer live: present it as the cached list from the last good refresh.
+    private void GoOffline()
+    {
+        _cachedAt = _refreshedAt ?? _cachedAt;
+        _refreshedAt = null;
+        NotifyStatus();
     }
 
     private void SyncPutty(RefreshResult result)
@@ -327,6 +343,8 @@ public sealed partial class MainViewModel : ObservableObject
             ShowBanner(string.Join(Environment.NewLine, reloaded.Warnings), warning: true);
 
         var now = reloaded.Effective;
+        // The list was fetched for the old tags: it must not be presented as Online for the new ones.
+        if (now.Tag != old.Tag || now.PuttyTag != old.PuttyTag) GoOffline();
         var needsRefresh = now.Tag != old.Tag || now.PuttyTag != old.PuttyTag || now.OpPath != old.OpPath
             || !now.Accounts.SequenceEqual(old.Accounts);
         if (needsRefresh) _ = RefreshAsync();

@@ -85,6 +85,52 @@ public class OpClientTests
         Assert.DoesNotContain("fake-pass-1", new ProcessResult(1, "fake-pass-1", "", false).ToString());
     }
 
+    [Theory]
+    [InlineData(2)]
+    [InlineData(3)]
+    public async Task Start_failure_file_or_path_not_found_maps_to_NotFound(int code)
+    {
+        var r = new FakeRunner(_ => throw new System.ComponentModel.Win32Exception(code));
+        var ex = await Assert.ThrowsAsync<OpException>(() => new OpClient("op", r).ListAccountsAsync(default));
+        Assert.Equal(OpErrorKind.NotFound, ex.Kind);
+    }
+
+    [Fact]
+    public async Task Start_failure_access_denied_maps_to_Other_with_hint()
+    {
+        var w32 = new System.ComponentModel.Win32Exception(5, "Access is denied");
+        var r = new FakeRunner(_ => throw w32);
+        var ex = await Assert.ThrowsAsync<OpException>(() => new OpClient("op", r).ListAccountsAsync(default));
+        Assert.Equal(OpErrorKind.Other, ex.Kind);
+        Assert.Equal("op.exe could not be started (Access is denied). Check that normal users can run it — see README AVD admin setup.", ex.UserMessage);
+    }
+
+    [Fact]
+    public async Task Other_error_appends_first_nonempty_stderr_line_trimmed()
+    {
+        var r = new FakeRunner(_ => new ProcessResult(4, "fake-pass-1", "\n  \n  [ERROR] something broke  \nsecond line\n", false));
+        var ex = await Assert.ThrowsAsync<OpException>(() => new OpClient("op", r).ListAccountsAsync(default));
+        Assert.Equal(OpErrorKind.Other, ex.Kind);
+        Assert.Equal("1Password CLI failed (exit code 4): [ERROR] something broke", ex.UserMessage);
+        Assert.DoesNotContain("fake-pass-1", ex.ToString());
+    }
+
+    [Fact]
+    public async Task Other_error_stderr_line_is_capped_at_200_chars()
+    {
+        var r = new FakeRunner(_ => new ProcessResult(1, "", new string('x', 300), false));
+        var ex = await Assert.ThrowsAsync<OpException>(() => new OpClient("op", r).ListAccountsAsync(default));
+        Assert.Equal("1Password CLI failed (exit code 1): " + new string('x', 200), ex.UserMessage);
+    }
+
+    [Fact]
+    public async Task Other_error_without_stderr_keeps_plain_message()
+    {
+        var r = new FakeRunner(_ => new ProcessResult(1, "", "  \n", false));
+        var ex = await Assert.ThrowsAsync<OpException>(() => new OpClient("op", r).ListAccountsAsync(default));
+        Assert.Equal("1Password CLI failed (exit code 1).", ex.UserMessage);
+    }
+
     [Fact]
     public async Task Missing_exe_throws_NotFound_without_running()
     {

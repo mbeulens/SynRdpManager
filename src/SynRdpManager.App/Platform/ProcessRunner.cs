@@ -37,7 +37,7 @@ public sealed class ProcessRunner : IProcessRunner
         {
             try
             {
-                if (stdin is not null) await process.StandardInput.WriteAsync(stdin);
+                if (stdin is not null) await process.StandardInput.WriteAsync(stdin.AsMemory(), timeoutCts.Token);
             }
             catch (IOException)
             {
@@ -49,10 +49,9 @@ public sealed class ProcessRunner : IProcessRunner
             }
 
             await process.WaitForExitAsync(timeoutCts.Token);
-            // Ensure redirected streams are fully drained.
-            var stdout = await stdoutTask;
-            var stderr = await stderrTask;
-            return new ProcessResult(process.ExitCode, stdout, stderr, false);
+            // Ensure redirected streams are fully drained (a grandchild holding the pipes open must not hang us).
+            await Task.WhenAll(stdoutTask, stderrTask).WaitAsync(timeoutCts.Token);
+            return new ProcessResult(process.ExitCode, await stdoutTask, await stderrTask, false);
         }
         catch (OperationCanceledException)
         {

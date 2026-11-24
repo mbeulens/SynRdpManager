@@ -31,8 +31,21 @@ public static class OpErrorClassifier
         OpErrorKind.Locked => "1Password is locked or the request was not approved. Unlock 1Password and press Refresh.",
         OpErrorKind.NotSignedIn => "No 1Password accounts are configured for the CLI. Add or sign in to an account in 1Password, then press Refresh.",
         OpErrorKind.TimedOut => "1Password did not respond in time. Unlock 1Password and press Refresh.",
-        _ => r is null ? "1Password CLI failed." : $"1Password CLI failed (exit code {r.ExitCode})."
+        _ => r is null ? "1Password CLI failed."
+            : FirstStdErrLine(r) is { } line ? $"1Password CLI failed (exit code {r.ExitCode}): {line}"
+            : $"1Password CLI failed (exit code {r.ExitCode})."
     };
+
+    // Only stderr is ever quoted; stdout may contain secrets.
+    static string? FirstStdErrLine(ProcessResult r)
+    {
+        foreach (var raw in (r.StdErr ?? "").Split('\n'))
+        {
+            var line = raw.Trim();
+            if (line.Length > 0) return line.Length > 200 ? line[..200] : line;
+        }
+        return null;
+    }
 }
 
 public class OpClient(string opPath, IProcessRunner runner)
@@ -70,9 +83,14 @@ public class OpClient(string opPath, IProcessRunner runner)
         {
             r = await runner.RunAsync(opPath, args, stdin, CallTimeout, ct);
         }
-        catch (System.ComponentModel.Win32Exception)
+        catch (System.ComponentModel.Win32Exception ex) when (ex.NativeErrorCode is 2 or 3) // file / path not found
         {
             throw new OpException(OpErrorKind.NotFound, OpErrorClassifier.MessageFor(OpErrorKind.NotFound));
+        }
+        catch (System.ComponentModel.Win32Exception ex)
+        {
+            throw new OpException(OpErrorKind.Other,
+                $"op.exe could not be started ({ex.Message}). Check that normal users can run it — see README AVD admin setup.");
         }
 
         if (r.TimedOut || r.ExitCode != 0)

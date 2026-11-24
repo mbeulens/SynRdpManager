@@ -19,9 +19,14 @@ public class CatalogService(OpClient op)
 
     public async Task<RefreshResult> RefreshAsync(AppSettings s, CancellationToken ct)
     {
-        var accounts = (await op.ListAccountsAsync(ct)).Where(a => Selected(a, s.Accounts)).ToList();
+        var all = await op.ListAccountsAsync(ct);
+        if (all.Count == 0)
+            throw new OpException(OpErrorKind.IntegrationDisabled,
+                "No 1Password accounts are available to the CLI. Unlock 1Password and enable Settings → Developer → \"Integrate with 1Password CLI\", then press Refresh.");
+        var accounts = all.Where(a => Selected(a, s.Accounts)).ToList();
         if (accounts.Count == 0)
-            return new RefreshResult([], new Dictionary<string, string?>(), []);
+            throw new OpException(OpErrorKind.NotSignedIn,
+                "None of the accounts in the Accounts setting are signed in to 1Password. Check the Accounts setting.");
 
         var outcomes = await Task.WhenAll(accounts.Select(a => RefreshAccountAsync(a, s, ct)));
 

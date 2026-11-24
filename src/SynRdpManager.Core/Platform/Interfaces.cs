@@ -31,12 +31,13 @@ public interface IPuttySessionStore
     void Write(string name, IReadOnlyDictionary<string, object> values);
 }
 
-public sealed record StoredCredential(string Target, string UserName, string Secret, string? Comment)
+/// <param name="Persist">Native CRED_PERSIST_* value as read; null = the store's default (session).</param>
+public sealed record StoredCredential(string Target, string UserName, string Secret, string? Comment, uint? Persist = null)
 {
     // Never print Secret.
     bool PrintMembers(StringBuilder sb)
     {
-        sb.Append($"Target = {Target}, UserName = {UserName}, Comment = {Comment}");
+        sb.Append($"Target = {Target}, UserName = {UserName}, Comment = {Comment}, Persist = {Persist}");
         return true;
     }
 }

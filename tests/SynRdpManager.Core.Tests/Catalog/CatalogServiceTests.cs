@@ -150,12 +150,24 @@ public class CatalogServiceTests
     }
 
     [Fact]
-    public async Task Refresh_zero_accounts_returns_empty()
+    public async Task Refresh_zero_accounts_throws_IntegrationDisabled()
     {
         var r = Fake("[]", Data());
-        var res = await new CatalogService(new OpClient("op", r)).RefreshAsync(new AppSettings(), default);
-        Assert.Empty(res.Entries);
-        Assert.Empty(res.Warnings);
+        var ex = await Assert.ThrowsAsync<OpException>(() =>
+            new CatalogService(new OpClient("op", r)).RefreshAsync(new AppSettings(), default));
+        Assert.Equal(OpErrorKind.IntegrationDisabled, ex.Kind);
+        Assert.Equal("No 1Password accounts are available to the CLI. Unlock 1Password and enable Settings → Developer → \"Integrate with 1Password CLI\", then press Refresh.", ex.UserMessage);
+        Assert.Single(r.Calls);
+    }
+
+    [Fact]
+    public async Task Refresh_accounts_filter_matching_none_throws()
+    {
+        var r = Fake(TwoAccounts, Data());
+        var ex = await Assert.ThrowsAsync<OpException>(() =>
+            new CatalogService(new OpClient("op", r)).RefreshAsync(new AppSettings { Accounts = ["nobody@x.nl"] }, default));
+        Assert.Equal(OpErrorKind.NotSignedIn, ex.Kind);
+        Assert.Equal("None of the accounts in the Accounts setting are signed in to 1Password. Check the Accounts setting.", ex.UserMessage);
         Assert.Single(r.Calls);
     }
 

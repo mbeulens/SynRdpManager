@@ -51,6 +51,15 @@ public class SettingsLoaderTests
     }
 
     [Fact]
+    public void Duplicate_keys_ignore_that_layer_with_warning()
+    {
+        var r = SettingsLoader.Load("""{"Tag":"T"}""", """{"Tag":"a","Tag":"b"}""");
+        Assert.Equal("T", r.Effective.Tag);
+        var w = Assert.Single(r.Warnings);
+        Assert.Contains("user settings", w);
+    }
+
+    [Fact]
     public void Unknown_keys_are_ignored()
     {
         var r = SettingsLoader.Load("""{"Bogus":1,"Tag":"T"}""", null);

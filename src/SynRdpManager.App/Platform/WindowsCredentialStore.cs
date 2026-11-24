@@ -77,7 +77,8 @@ public sealed partial class WindowsCredentialStore : ICredentialStore
                 Marshal.PtrToStringUni(cred.TargetName) ?? target,
                 Marshal.PtrToStringUni(cred.UserName) ?? string.Empty,
                 secret,
-                Marshal.PtrToStringUni(cred.Comment));
+                Marshal.PtrToStringUni(cred.Comment),
+                cred.Persist);
         }
         finally
         {
@@ -110,7 +111,7 @@ public sealed partial class WindowsCredentialStore : ICredentialStore
                 Comment = commentPtr,
                 CredentialBlobSize = (uint)secretBytes.Length,
                 CredentialBlob = blobPtr,
-                Persist = CredPersistSession,
+                Persist = c.Persist ?? CredPersistSession, // restored backups keep their original persistence
                 UserName = userPtr,
             };
 

@@ -1,6 +1,6 @@
 # SynRdpManager
 
-Version: 0.1.22
+Version: 0.1.23
 
 ## What it does
 
@@ -107,14 +107,17 @@ colour and SSH settings.
 | 1Password is locked or the request was not approved. Unlock 1Password and press Refresh. | Unlock 1Password and approve the popup. |
 | No 1Password accounts are configured for the CLI. Add or sign in to an account in 1Password, then press Refresh. | Sign in to your account in the desktop app. |
 | 1Password did not respond in time. Unlock 1Password and press Refresh. | Approval popup was not answered, or 1Password is busy. Unlock and retry. |
-| 1Password CLI failed (exit code N). | Run `op vault list` in a terminal to see the real error. |
+| No 1Password accounts are available to the CLI. Unlock 1Password and enable Settings → Developer → "Integrate with 1Password CLI", then press Refresh. | The CLI sees no account: usually the CLI integration is off. Unlock 1Password and turn it on. |
+| None of the accounts in the Accounts setting are signed in to 1Password. Check the Accounts setting. | The `Accounts` setting matches no signed-in account. Fix or clear it. |
+| op.exe could not be started (…). Check that normal users can run it — see README AVD admin setup. | `op.exe` exists but cannot be run (e.g. access denied). See AVD admin setup. |
+| 1Password CLI failed (exit code N): … | The text after the colon is the CLI's error. Run `op vault list` in a terminal for details. |
 | No items tagged "MstscDealer" or "PuttyDealer" found | Tag your server items in 1Password (or check the tag names in Settings and that you have vault access). |
 | "..." has no hostname | Add a `hostname` field or a website URL to the item. |
 | mstsc asks for a password | Credentials could not be fetched (a notice says why), or `LaunchMode` is `Clipboard`. If it still prompts in `Auto`, report it. |
 | PuTTY (putty.exe) was not found. | Install PuTTY for all users or set `PuttyPath`. |
 | The PuTTY template session "..." does not exist yet | Use "Edit PuTTY template" in the toolbar and save it in PuTTY. |
 | Pageant is not running | Start Pageant and load your key, then connect again. |
-| Offline - cached list from ... | 1Password could not be reached; the last known list is shown. Fix the cause above and press Refresh. |
+| Offline · cached list from … | 1Password could not be reached; the last known list is shown. Fix the cause above and press Refresh. |
 
 ## Development
 
