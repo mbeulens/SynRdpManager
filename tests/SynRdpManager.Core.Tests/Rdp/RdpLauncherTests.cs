@@ -302,4 +302,36 @@ public class RdpLauncherTests
         _time.Advance(Delay);
         Assert.False(_creds.Items.ContainsKey("TERMSRV/server01"));
     }
+
+    [Fact]
+    public async Task Reconnect_write_failure_keeps_retry_entry_and_foreign_backup()
+    {
+        var foreign = new StoredCredential("TERMSRV/server01", "other", "foreignpw", null);
+        _creds.Items[foreign.Target] = foreign;
+        await _sut.ConnectAsync(Entry(), Creds, LaunchMode.Auto, Delay, CancellationToken.None);
+        _creds.FailOn = _ => true;
+        _time.Advance(Delay);
+
+        await Assert.ThrowsAsync<IOException>(() =>
+            _sut.ConnectAsync(Entry(), Creds, LaunchMode.Auto, Delay, CancellationToken.None));
+        _creds.FailOn = _ => false;
+        _sut.CleanupPendingNow();
+
+        Assert.Equal(foreign, _creds.Items[foreign.Target]);
+    }
+
+    [Fact]
+    public void CleanupLeftovers_continues_after_one_delete_fails()
+    {
+        _creds.Items["TERMSRV/a"] = new("TERMSRV/a", "u", "p", RdpLauncher.Comment);
+        _creds.Items["TERMSRV/b"] = new("TERMSRV/b", "u", "p", RdpLauncher.Comment);
+        _creds.FailOn = t => t == "TERMSRV/a";
+
+        var ex = Record.Exception(() => _sut.CleanupLeftovers());
+
+        Assert.Null(ex);
+        Assert.False(_creds.Items.ContainsKey("TERMSRV/b"));
+        var error = Assert.Single(_errors);
+        Assert.Contains("TERMSRV/a", error);
+    }
 }

@@ -71,7 +71,7 @@ public sealed class RdpLauncher(
                 StoredCredential? backup;
                 if (_pending.TryGetValue(target, out var previous))
                     backup = previous.Backup;
-                else if (_retry.Remove(target, out var failed))
+                else if (_retry.TryGetValue(target, out var failed))
                     backup = failed.Backup; // our credential is still stored; the foreign original is only in memory
                 else
                 {
@@ -81,6 +81,7 @@ public sealed class RdpLauncher(
 
                 creds.Write(new StoredCredential(target, c.UserName, c.Password, Comment));
                 Schedule(target, new Pending(() => Restore(target, backup), backup, underLock: true), cleanupDelay);
+                _retry.Remove(target); // only after Write and Schedule succeeded
             }
 
             try
@@ -155,7 +156,10 @@ public sealed class RdpLauncher(
     public void CleanupLeftovers()
     {
         foreach (var target in creds.TargetsWithComment(Comment))
-            creds.Delete(target);
+        {
+            try { creds.Delete(target); }
+            catch (Exception ex) { Report($"Leftover cleanup for '{target}' failed: {ex.GetType().Name}"); }
+        }
     }
 
     public void CleanupPendingNow()
