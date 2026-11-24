@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <AssemblyName>SynRdpManager</AssemblyName>
     <RootNamespace>SynRdpManager.App</RootNamespace>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
@@ -16,6 +17,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\SynRdpManager.Core\SynRdpManager.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="11.0.0" />
   </ItemGroup>
 
 </Project>
