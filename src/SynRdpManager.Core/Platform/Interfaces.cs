@@ -16,3 +16,9 @@ public interface IProcessRunner
 {
     Task<ProcessResult> RunAsync(string exe, IReadOnlyList<string> args, string? stdin, TimeSpan timeout, CancellationToken ct);
 }
+
+public interface IDataProtector
+{
+    byte[] Protect(byte[] data);
+    byte[] Unprotect(byte[] data);
+}

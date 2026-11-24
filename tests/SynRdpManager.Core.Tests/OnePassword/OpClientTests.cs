@@ -5,16 +5,6 @@ namespace SynRdpManager.Core.Tests.OnePassword;
 
 public class OpClientTests
 {
-    sealed class FakeRunner(Func<IReadOnlyList<string>, ProcessResult> respond) : IProcessRunner
-    {
-        public List<(string Exe, string[] Args, string? Stdin, TimeSpan Timeout)> Calls { get; } = [];
-        public Task<ProcessResult> RunAsync(string exe, IReadOnlyList<string> args, string? stdin, TimeSpan timeout, CancellationToken ct)
-        {
-            Calls.Add((exe, args.ToArray(), stdin, timeout));
-            return Task.FromResult(respond(args));
-        }
-    }
-
     static ProcessResult Ok(string s) => new(0, s, "", false);
     static readonly OpAccount Acc = new("acct-uuid", "me@x.example", "x.1password.com");
 
