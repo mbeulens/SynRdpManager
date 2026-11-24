@@ -1,6 +1,6 @@
 # SynRdpManager
 
-Version: 0.1.28
+Version: 0.2.0
 
 ## What it does
 
