@@ -1,10 +1,10 @@
 # SynRdpManager
 
-Version: 0.1.26
+Version: 0.1.27
 
 ## What it does
 
-SynRdpManager is a small Windows app (WPF, single exe) that lists every RDP and SSH server you can see in
+SynRdpManager is a small Windows app (WPF) that lists every RDP and SSH server you can see in
 1Password, grouped per vault (= per customer), and connects with one double-click:
 
 - **RDP** servers (1Password tag `MstscDealer`): the app writes a temporary Windows credential, starts
@@ -16,14 +16,19 @@ SynRdpManager is a small Windows app (WPF, single exe) that lists every RDP and 
 
 The app never edits 1Password items, never deletes PuTTY sessions and never writes passwords to disk, logs or command lines.
 
-## Download
+## Download and install
 
-GitHub Releases: https://github.com/mbeulens/SynRdpManager/releases
+Download `SynRdpManager-win-Setup.exe` from the latest release on
+https://github.com/mbeulens/SynRdpManager/releases and run it. It installs per user (no admin rights needed) and
+creates a Start menu shortcut. Windows SmartScreen may warn about an unknown publisher: click **More info -> Run anyway**.
+`SynRdpManager-win-Portable.zip` is also available for use without installing. Builds of every push are available as the
+`SynRdpManager-<version>` artifact of the workflow run on the Actions tab (GitHub sign-in required).
 
-Until the first release exists, builds are available as the `SynRdpManager` artifact of the latest
-workflow run on the Actions tab of the repository (GitHub sign-in required); it contains `SynRdpManager-<version>.zip`.
+**Updates are automatic.** The app checks the GitHub Releases in the background. When a new version has been downloaded a
+banner says "Version X is ready" with a **Restart now** button; otherwise it is applied the next time you start the app.
+You can check manually via the gear menu (⚙ ▾) -> **Check for updates**.
 
-The zip contains `SynRdpManager.exe` (self-contained, no .NET install needed) and `settings.sample.json`.
+On FSLogix profile setups the profile container must not exclude `AppData\Local`: the app installs there and keeps its updates there.
 
 ## AVD admin setup (one-time)
 
@@ -37,15 +42,15 @@ The zip contains `SynRdpManager.exe` (self-contained, no .NET install needed) an
    Do **not** use `winget install --scope machine`: the real exe then sits under
    `C:\Program Files\WinGet\Packages`, where normal users get "Access is denied".
 3. **PuTTY** installed for all users at `C:\Program Files\PuTTY\` (only needed for SSH servers).
-4. Put `SynRdpManager.exe` in a folder all users can read (for example `C:\Program Files\SynRdpManager\`).
-   Optionally place a `settings.json` next to it with team defaults (see [Settings](#settings)); start from `settings.sample.json`.
+4. Colleagues install the app themselves with `SynRdpManager-win-Setup.exe` (see [Download and install](#download-and-install)).
+   Optionally put a `settings.json` with team defaults in `%LocalAppData%\SynRdpManager\` (see [Settings](#settings)); start from `settings.sample.json`.
 
 ## Per-user setup
 
 1. Start 1Password and **unlock it first**: the Developer settings are greyed out while it is locked.
 2. 1Password -> Settings -> Developer -> enable **Integrate with 1Password CLI**.
 3. For SSH servers: make sure **Pageant** is running with your key loaded.
-4. Start `SynRdpManager.exe`. The first refresh shows a 1Password approval popup: approve it
+4. Start SynRdpManager from the Start menu. The first refresh shows a 1Password approval popup: approve it
    (Windows Hello / PIN). The list appears; double-click a server to connect.
 
 ## Tagging items in 1Password
@@ -67,7 +72,7 @@ Example: item "Customer A - AL server" in vault "Customer A", tag `MstscDealer`,
 
 ## Settings
 
-Defaults can be shipped as `settings.json` **next to the exe** (team settings). Each user's own overrides are stored in
+Team defaults go in `%LocalAppData%\SynRdpManager\settings.json` (survives updates; a `settings.json` next to the exe still works for portable use). Each user's own overrides are stored in
 `%APPDATA%\SynRdpManager\settings.json` (written by the Settings window). **The user file wins.** Both files are plain JSON;
 see `settings.sample.json`. Changing a tag, `OpPath` or `Accounts` triggers a refresh.
 
@@ -126,14 +131,20 @@ Requires the .NET 10 SDK. The app builds on Linux too (`EnableWindowsTargeting`)
 ```
 dotnet build
 dotnet test
-dotnet publish src/SynRdpManager.App -c Release -o out
+dotnet publish src/SynRdpManager.App -c Release -r win-x64 --self-contained -o publish
 ```
 
 - Projects: `src/SynRdpManager.Core` (logic, testable), `src/SynRdpManager.App` (WPF), `tests/SynRdpManager.Core.Tests`.
 - Design: `docs/superpowers/specs/2026-11-24-mstsc-launcher-design.md`. AVD checklist: `docs/SMOKE-TEST.md`.
-- CI (`.github/workflows/build.yml`) tests, publishes and zips every push; a tag `vX.Y.Z` creates a GitHub Release.
+- CI (`.github/workflows/build.yml`) tests, publishes and packs (Velopack) every push; a tag `vX.Y.Z` creates a GitHub Release.
 - **Versioning:** the `VERSION` file is the single source of truth. All work happens on `dev`; every commit bumps the
   patch number in `VERSION` and the `Version:` line above, and is pushed to `dev`. "Bump minor/major" = update
   `CHANGELOG.md` and this README, merge `dev` into `master`, push both, tag `vX.Y.Z`.
 - **Skip-13 rule:** any version component equal to 13 is skipped (0.1.12 -> 0.1.14, 0.12.x -> 0.14.0) and that commit's
   subject is exactly `To be sure to be sure!`.
+
+### Releasing
+
+Say "bump minor" or "bump major": `CHANGELOG.md` and this README are updated, `dev` is merged into `master`, and the tag
+`vX.Y.Z` (must equal `VERSION`) is pushed. CI then publishes the GitHub Release with the installer and update packages,
+and colleagues receive the update automatically.

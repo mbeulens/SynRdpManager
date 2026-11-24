@@ -10,6 +10,8 @@ jobs:
     runs-on: windows-latest
     permissions:
       contents: write
+    env:
+      REPO_URL: https://github.com/mbeulens/SynRdpManager
     steps:
       - uses: actions/checkout@v4
 
@@ -17,30 +19,53 @@ jobs:
         with:
           global-json-file: global.json
 
+      - name: Read version
+        shell: pwsh
+        run: |
+          $v = (Get-Content VERSION).Trim()
+          if (-not $v) { throw 'VERSION is empty' }
+          "VERSION=$v" | Out-File -FilePath $env:GITHUB_ENV -Append
+          if ($env:GITHUB_REF -like 'refs/tags/v*' -and "v$v" -ne $env:GITHUB_REF_NAME) {
+            throw "Tag $env:GITHUB_REF_NAME does not match VERSION v$v"
+          }
+          if (-not (Test-Path settings.sample.json)) { throw 'settings.sample.json is missing' }
+
       - name: Test
         run: dotnet test -c Release
 
       - name: Publish
-        run: dotnet publish src/SynRdpManager.App -c Release -o out
+        run: dotnet publish src/SynRdpManager.App -c Release -r win-x64 --self-contained -o publish
 
-      - name: Package
+      - name: Install vpk
+        run: dotnet tool install -g vpk --version 1.2.161
+
+      - name: Download previous release (for deltas)
+        if: startsWith(github.ref, 'refs/tags/v')
+        continue-on-error: true
+        run: vpk download github --repoUrl ${{ env.REPO_URL }} --token ${{ secrets.GITHUB_TOKEN }} -o releases
+
+      - name: Pack
+        run: vpk pack --packId SynRdpManager --packVersion ${{ env.VERSION }} --packDir publish --mainExe SynRdpManager.exe -o releases
+
+      - name: Stage artifact
         shell: pwsh
         run: |
-          $v = (Get-Content VERSION).Trim()
-          if (-not (Test-Path settings.sample.json)) { throw 'settings.sample.json is missing' }
-          if (-not (Test-Path out/SynRdpManager.exe)) { throw 'out/SynRdpManager.exe is missing' }
-          $files = @('out/SynRdpManager.exe', 'settings.sample.json')
-          Compress-Archive -Path $files -DestinationPath "SynRdpManager-$v.zip"
-          "ZIP=SynRdpManager-$v.zip" | Out-File -FilePath $env:GITHUB_ENV -Append
+          New-Item -ItemType Directory -Force -Path dist | Out-Null
+          Copy-Item releases/*Setup.exe, releases/*Portable.zip, settings.sample.json -Destination dist
+          Get-ChildItem dist
 
       - uses: actions/upload-artifact@v4
         with:
-          name: SynRdpManager
-          path: ${{ env.ZIP }}
-          if-no-files-found: warn
+          name: SynRdpManager-${{ env.VERSION }}
+          path: dist/*
+          if-no-files-found: error
 
       - name: Release
         if: startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v2
-        with:
-          files: ${{ env.ZIP }}
+        run: vpk upload github --repoUrl ${{ env.REPO_URL }} --publish --releaseName "SynRdpManager ${{ env.VERSION }}" --tag ${{ github.ref_name }} --token ${{ secrets.GITHUB_TOKEN }} -o releases
+
+      - name: Attach settings.sample.json
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release upload ${{ github.ref_name }} settings.sample.json --clobber
