@@ -65,6 +65,8 @@ Mark each box; on failure note the step number.
 - [ ] 20. Start 1Password again, unlock, press Refresh.
   Expected: back to Online.
 
+## Update
+
 - [ ] 21. After the *next* release is published, start the app.
   Expected: a banner "Version X is ready" appears; **Restart now** restarts the app and the status bar shows the new version.
   Team settings in `%LocalAppData%\SynRdpManager\settings.json` and your own `%APPDATA%\SynRdpManager\settings.json` survive the update.

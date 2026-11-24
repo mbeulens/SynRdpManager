@@ -7,11 +7,11 @@ namespace SynRdpManager.App.Services;
 /// Checks GitHub Releases via Velopack, downloads an available update and offers a restart.
 /// Velopack calls run on the thread pool; call the public methods from the UI thread
 /// (<paramref name="showBanner"/> is invoked on the caller's context after each await).
-/// Does nothing when the app was not installed with Setup.exe (dev build, portable zip).
+/// Does nothing when the app was not installed with Setup.exe or the Velopack portable zip (e.g. dev build).
 /// </summary>
 public sealed class UpdateService(string repoUrl, Action<string> showBanner, Action beforeRestart)
 {
-    private const string NotInstalledMessage = "Updates work only when installed with Setup.exe.";
+    private const string NotInstalledMessage = "Updates are only available when SynRdpManager was installed with Setup.exe or the portable zip from GitHub Releases.";
     private const string FailedMessage = "Update check failed — try again later.";
 
     private Task<UpdateManager>? _managerTask;
@@ -62,7 +62,7 @@ public sealed class UpdateService(string repoUrl, Action<string> showBanner, Act
     public void RestartToUpdate()
     {
         if (_manager is null || _ready is null) return;
-        beforeRestart();
+        try { beforeRestart(); } catch { /* best-effort cleanup; CleanupLeftovers runs on next start */ }
         _manager.ApplyUpdatesAndRestart(_ready);
     }
 

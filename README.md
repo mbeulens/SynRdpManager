@@ -1,6 +1,6 @@
 # SynRdpManager
 
-Version: 0.1.27
+Version: 0.1.28
 
 ## What it does
 
@@ -20,7 +20,7 @@ The app never edits 1Password items, never deletes PuTTY sessions and never writ
 
 Download `SynRdpManager-win-Setup.exe` from the latest release on
 https://github.com/mbeulens/SynRdpManager/releases and run it. It installs per user (no admin rights needed) and
-creates a Start menu shortcut. Windows SmartScreen may warn about an unknown publisher: click **More info -> Run anyway**.
+creates a Start menu and desktop shortcut. Windows SmartScreen may warn about an unknown publisher: click **More info -> Run anyway**.
 `SynRdpManager-win-Portable.zip` is also available for use without installing. Builds of every push are available as the
 `SynRdpManager-<version>` artifact of the workflow run on the Actions tab (GitHub sign-in required).
 
@@ -43,7 +43,7 @@ On FSLogix profile setups the profile container must not exclude `AppData\Local`
    `C:\Program Files\WinGet\Packages`, where normal users get "Access is denied".
 3. **PuTTY** installed for all users at `C:\Program Files\PuTTY\` (only needed for SSH servers).
 4. Colleagues install the app themselves with `SynRdpManager-win-Setup.exe` (see [Download and install](#download-and-install)).
-   Optionally put a `settings.json` with team defaults in `%LocalAppData%\SynRdpManager\` (see [Settings](#settings)); start from `settings.sample.json`.
+   Optionally put a `settings.json` with team defaults in `%LocalAppData%\SynRdpManager\` **after** installing (see [Settings](#settings)); start from `settings.sample.json`.
 
 ## Per-user setup
 
@@ -72,7 +72,7 @@ Example: item "Customer A - AL server" in vault "Customer A", tag `MstscDealer`,
 
 ## Settings
 
-Team defaults go in `%LocalAppData%\SynRdpManager\settings.json` (survives updates; a `settings.json` next to the exe still works for portable use). Each user's own overrides are stored in
+Team defaults go in `%LocalAppData%\SynRdpManager\settings.json` (create it **after** installing; it survives updates, but uninstalling SynRdpManager removes that whole folder including this file, so keep a copy; a `settings.json` next to the exe still works for portable use). Each user's own overrides are stored in
 `%APPDATA%\SynRdpManager\settings.json` (written by the Settings window). **The user file wins.** Both files are plain JSON;
 see `settings.sample.json`. Changing a tag, `OpPath` or `Accounts` triggers a refresh.
 

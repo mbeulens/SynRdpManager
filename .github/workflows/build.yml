@@ -45,7 +45,7 @@ jobs:
         run: vpk download github --repoUrl ${{ env.REPO_URL }} --token ${{ secrets.GITHUB_TOKEN }} -o releases
 
       - name: Pack
-        run: vpk pack --packId SynRdpManager --packVersion ${{ env.VERSION }} --packDir publish --mainExe SynRdpManager.exe -o releases
+        run: vpk pack --packId SynRdpManager --packVersion ${{ env.VERSION }} --packDir publish --mainExe SynRdpManager.exe --runtime win-x64 -o releases
 
       - name: Stage artifact
         shell: pwsh
